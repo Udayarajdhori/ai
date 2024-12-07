@@ -24,6 +24,7 @@ def login():
         # Authenticate user
         if username in users and users[username]['password'] == password:
             session['username'] = username  # Save user in session
+            session.pop('stay_logged_out', None)  # Clear stay_logged_out if previously set
             return redirect(url_for('chat'))
         else:
             return "Invalid credentials, try again."
@@ -51,11 +52,13 @@ def signup():
 
 @app.route('/chat')
 def chat():
-    # If the user is not logged in and accesses the chat, show the login page
+    # If the user is neither logged in nor opted to stay logged out, redirect to login
     if 'username' not in session and 'stay_logged_out' not in session:
         return redirect(url_for('login'))  # Restrict access if not logged in
     
-    return render_template('chat.html')  # Show chat dashboard
+    # Pass the logged_in status to the template
+    logged_in = 'username' in session
+    return render_template('chat.html', logged_in=logged_in)
 
 @app.route('/logout')
 def logout():
@@ -67,6 +70,7 @@ def logout():
 def stay_logged_out():
     # Set a flag in the session to indicate the user wants to access the chat while staying logged out
     session['stay_logged_out'] = True
+    session.pop('username', None)  # Ensure no user session persists
     return redirect(url_for('chat'))  # Redirect to the chat page
 
 if __name__ == '__main__':
